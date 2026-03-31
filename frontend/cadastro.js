@@ -16,16 +16,34 @@ if (!token) {
     window.location.href = "index.html"; 
 }
 
-// 2. BUSCAR PRODUTOS (Preencher a tabela)
+// 2. BUSCAR PRODUTOS (Com Token de Autenticação)
 async function buscarProdutos() {
     try {
-        const response = await fetch(`${API_URL}/api/produtos`);
-        if (!response.ok) throw new Error("Falha ao buscar produtos");
+        // Buscamos o token que foi salvo no login
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(`${API_URL}/api/produtos`, {
+            method: 'GET',
+            headers: {
+                "Authorization": `Bearer ${token}`, // <-- ESSENCIAL para o servidor aceitar
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                alert("Sessão expirada. Por favor, faça login novamente.");
+                window.location.href = "index.html";
+                return;
+            }
+            throw new Error("Falha ao buscar produtos");
+        }
         
         const produtos = await response.json();
         atualizarTabela(produtos);
     } catch (error) {
         console.error("Erro ao buscar produtos:", error);
+        // Se cair aqui, o servidor provavelmente está 'dormindo' (plano gratuito do Render)
     }
 }
 
