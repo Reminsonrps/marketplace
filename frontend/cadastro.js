@@ -1,5 +1,5 @@
 // 1. CONFIGURAÇÕES INICIAIS
-const API_URL = "http://localhost:3000"; // ALTERE para o link do Railway quando fizer o deploy
+const API_URL = "https://cleane-peliculas.onrender.com"; // ALTERE para o link do Railway quando fizer o deploy
 
 const form = document.getElementById('cadastrar');
 const corpoTabela = document.getElementById('corpo-tabela');
