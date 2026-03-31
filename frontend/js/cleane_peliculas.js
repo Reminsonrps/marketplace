@@ -1,5 +1,5 @@
 // 1. Configurações Iniciais
-const API_URL = "http://localhost:3000"; 
+const API_URL = "https://cleane-peliculas.onrender.com"; 
 
 const container = document.getElementById('cards');
 const campoBusca = document.getElementById('campoBusca');
