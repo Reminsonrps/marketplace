@@ -8,6 +8,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Produto } from './models/produto.js';
 import { v2 as cloudinary } from 'cloudinary';
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
@@ -15,18 +16,23 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// --- MIDDLEWARES ESSENCIAIS ---
+app.use(cors());
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
+
 // --- CONFIGURAÇÃO CLOUDINARY ---
 cloudinary.config({ 
-  cloud_name: 'dvunnmetj', 
-  api_key: '122137693514899', 
-  api_secret: 'tIOAPXNLtRRDxiuyKyDXUbt7DzE' 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dvunnmetj', 
+  api_key: process.env.CLOUDINARY_API_KEY || '122137693514899', 
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'tIOAPXNLtRRDxiuyKyDXUbt7DzE' 
 });
 
 // --- CONFIGURAÇÃO DO MULTER ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = 'uploads/';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir); // Cria a pasta se não existir
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); 
     cb(null, dir); 
   },
   filename: (req, file, cb) => {
@@ -36,17 +42,60 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// --- MIDDLEWARES ---
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(path.join(__dirname, './frontend')));
+// --- SEGURANÇA (ADMIN) ---
+const ADMIN_USER = {
+  usuario: process.env.ADMIN_USER || "cleaneadmin",
+  senha: process.env.ADMIN_PASS || "brasileira",
+  role: "admin"
+};
 
-// --- ROTAS ---
+// --- ROTA DE LOGIN (CORRIGIDA) ---
+app.post("/api/login", (req, res) => {
+  const { usuario, senha } = req.body;
 
-// CADASTRAR (POST)
-app.post('/api/produtos', upload.single('imagem'), async (req, res) => {
+  if (usuario === ADMIN_USER.usuario && senha === ADMIN_USER.senha) {
+    const token = jwt.sign(
+      { usuario: ADMIN_USER.usuario, role: ADMIN_USER.role },
+      process.env.JWT_SECRET || "segredo_super_secreto",
+      { expiresIn: "4h" } 
+    );
+    return res.json({ token });
+  } else {
+    return res.status(401).json({ erro: "Credenciais inválidas" });
+  }
+});
+
+// --- MIDDLEWARE DE PROTEÇÃO ---
+function verificarAdmin(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) return res.status(401).json({ erro: "Acesso restrito. Faça login." });
+
+  try {
+    const token = authHeader.split(" ")[1]; 
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "segredo_super_secreto");
+
+    if (decoded.role === "admin") {
+      req.user = decoded;
+      next();
+    } else {
+      res.status(403).json({ erro: "Acesso negado" });
+    }
+  } catch (err) {
+    res.status(401).json({ erro: "Sessão expirada. Faça login novamente." });
+  }
+}
+
+// --- ROTAS DA API ---
+app.get('/api/produtos', async (req, res) => {
+  try {
+    const produtos = await Produto.find().sort({ dataCriacao: -1 });
+    res.json(produtos);
+  } catch (err) {
+    res.status(500).json({ erro: "Erro ao buscar produtos" });
+  }
+});
+
+app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, res) => {
   try {
     const { nome, descricao, preco, categoria, estoque } = req.body;
     let imagemUrl = "https://via.placeholder.com/150"; 
@@ -56,10 +105,10 @@ app.post('/api/produtos', upload.single('imagem'), async (req, res) => {
         folder: 'cleanesite_produtos'
       });
       imagemUrl = resultado.secure_url;
-      fs.unlinkSync(req.file.path); 
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path); 
     }
 
-    const novoDoc = new Produto({
+    const novoProduto = new Produto({
       nome,
       descricao,
       preco: Number(preco) || 0,
@@ -68,78 +117,37 @@ app.post('/api/produtos', upload.single('imagem'), async (req, res) => {
       imagemUrl
     });
 
-    await novoDoc.save();
-    res.status(201).json(novoDoc);
+    await novoProduto.save();
+    res.status(201).json(novoProduto);
   } catch (err) {
     console.error("Erro ao salvar:", err);
-    res.status(500).json({ erro: "Erro interno no servidor ou Cloudinary" });
+    res.status(500).json({ erro: "Erro ao cadastrar produto" });
   }
 });
 
-// LISTAR (GET)
-app.get('/api/produtos', async (req, res) => {
-  try {
-    const produtos = await Produto.find().sort({ dataCriacao: -1 });
-    res.json(produtos);
-  } catch (err) {
-    res.status(500).json({ erro: "Erro ao buscar" });
-  }
-});
-
-// EXCLUIR (DELETE)
-app.delete('/api/produtos/:id', async (req, res) => {
+app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
   try {
     await Produto.findByIdAndDelete(req.params.id);
-    res.json({ mensagem: "Removido!" });
+    res.json({ mensagem: "Produto removido com sucesso!" });
   } catch (err) {
     res.status(500).json({ erro: "Erro ao excluir" });
   }
 });
 
-// EDITAR (PUT)
-app.put('/api/produtos/:id', upload.single('imagem'), async (req, res) => {
-  try {
-    const { nome, descricao, preco, categoria, estoque } = req.body;
-    const updateData = { 
-      nome, 
-      descricao, 
-      preco: Number(preco), 
-      categoria, 
-      estoque: Number(estoque) 
-    };
+// --- SERVIR FRONTEND ---
+app.use(express.static(path.join(__dirname, 'frontend')));
 
-    if (req.file) {
-      const resultado = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'cleanesite_produtos'
-      });
-      updateData.imagemUrl = resultado.secure_url;
-      fs.unlinkSync(req.file.path);
-    }
-
-    const produtoAtualizado = await Produto.findByIdAndUpdate(
-      req.params.id, 
-      updateData, 
-      { new: true }
-    );
-
-    res.json(produtoAtualizado);
-  } catch (err) {
-    console.error("Erro ao editar:", err);
-    res.status(500).json({ erro: "Erro ao atualizar produto" });
-  }
+// Regex para servir o index.html sem conflitar com a API
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// SERVIR O FRONT-END
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, './frontend', 'cadastro.html'));
-}); // <--- CHAVE FECHADA AQUI CORRETAMENTE
-
-// --- CONEXÃO ---
+// --- CONEXÃO E INICIALIZAÇÃO ---
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cleanesite';
 const PORT = process.env.PORT || 3000;
 
 mongoose.connect(MONGO_URI)
   .then(() => {
-    app.listen(PORT, () => console.log(`🚀 Servidor e Cloudinary ativos: http://localhost:${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 Servidor ativo: http://localhost:${PORT}`));
   })
   .catch(err => console.error("❌ Erro no MongoDB:", err));

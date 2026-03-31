@@ -1,14 +1,27 @@
+// 1. CONFIGURAÇÕES INICIAIS
+const API_URL = "http://localhost:3000"; // ALTERE para o link do Railway quando fizer o deploy
+
 const form = document.getElementById('cadastrar');
 const corpoTabela = document.getElementById('corpo-tabela');
 const btnSubmit = form.querySelector('input[type="submit"]');
 
 let modoEdicao = false;
 let idEdicao = null;
+let listaProdutosLocal = [];
 
-// 1. BUSCAR PRODUTOS
+// VERIFICAÇÃO DE ACESSO
+const token = localStorage.getItem("token");
+if (!token) {
+    alert("⚠️ Acesso restrito: apenas administradores podem usar esta página.");
+    window.location.href = "index.html"; 
+}
+
+// 2. BUSCAR PRODUTOS (Preencher a tabela)
 async function buscarProdutos() {
     try {
-        const response = await fetch('http://localhost:3000/api/produtos');
+        const response = await fetch(`${API_URL}/api/produtos`);
+        if (!response.ok) throw new Error("Falha ao buscar produtos");
+        
         const produtos = await response.json();
         atualizarTabela(produtos);
     } catch (error) {
@@ -16,45 +29,42 @@ async function buscarProdutos() {
     }
 }
 
-// 2. ATUALIZAR TABELA (Adicionado ícone de editar)
-let listaProdutosLocal = []; // Criamos uma cópia local para facilitar
-
+// 3. ATUALIZAR TABELA NA TELA
 function atualizarTabela(produtos) {
-    listaProdutosLocal = produtos; // Guarda a lista vinda da API
+    listaProdutosLocal = produtos;
+    if (!corpoTabela) return;
     corpoTabela.innerHTML = "";
 
     produtos.forEach(p => {
-        corpoTabela.innerHTML += `
-            <tr>
-                <td>${p._id.slice(-4)}</td>
-                <td>${p.nome}</td>
-                <td>${p.descricao}</td>
-                <td>R$ ${Number(p.preco).toFixed(2)}</td>
-                <td><img src="${p.imagemUrl}" width="50" style="border-radius: 4px;"></td>
-                <td>
-                    <button class="btn-acao" onclick="prepararEdicao('${p._id}')">
-                        <span class="material-symbols-outlined" style="color: #2196f3;">edit</span>
-                    </button>
-                    <button class="btn-acao" onclick="excluirProduto('${p._id}')">
-                        <span class="material-symbols-outlined" style="color: #ca0d5c;">delete</span>
-                    </button>
-                </td>
-            </tr>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${p._id.slice(-4)}</td>
+            <td><strong>${p.nome}</strong></td>
+            <td>${p.descricao}</td>
+            <td>R$ ${Number(p.preco).toFixed(2)}</td>
+            <td><img src="${p.imagemUrl}" width="50" style="border-radius: 4px; border: 1px solid #ddd;"></td>
+            <td>
+                <button class="btn-acao" onclick="prepararEdicao('${p._id}')" title="Editar">
+                    <span class="material-symbols-outlined" style="color: #2196f3; cursor:pointer;">edit</span>
+                </button>
+                <button class="btn-acao" onclick="excluirProduto('${p._id}')" title="Excluir">
+                    <span class="material-symbols-outlined" style="color: #ca0d5c; cursor:pointer;">delete</span>
+                </button>
+            </td>
         `;
+        corpoTabela.appendChild(tr);
     });
 }
 
-// 3. PREPARAR EDIÇÃO (Melhorado)
+// 4. PREPARAR EDIÇÃO (Puxa os dados para o form)
 window.prepararEdicao = (id) => {
-    // Busca o produto na nossa lista local usando o ID
     const p = listaProdutosLocal.find(prod => prod._id === id);
-    
     if (!p) return;
 
     modoEdicao = true;
     idEdicao = id;
 
-    // Preenche os campos
+    // Preenche os campos do formulário
     document.getElementById('nome').value = p.nome;
     document.getElementById('descricao').value = p.descricao;
     document.getElementById('preco').value = p.preco;
@@ -63,44 +73,43 @@ window.prepararEdicao = (id) => {
     // Muda o visual do botão
     btnSubmit.value = "Salvar Alterações";
     btnSubmit.style.background = "#2196f3";
-    
-    document.querySelector('aside').scrollIntoView({ behavior: 'smooth' });
+
+    // Rola a tela para o formulário
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 3. PREPARAR EDIÇÃO (Preenche o formulário)
-window.prepararEdicao = (id, nome, descricao, preco, estoque) => {
-    modoEdicao = true;
-    idEdicao = id;
-
-    // Preenche os campos do formulário
-    document.getElementById('nome').value = nome;
-    document.getElementById('descricao').value = descricao;
-    document.getElementById('preco').value = preco;
-    document.getElementById('estoque').value = estoque;
-
-    // Muda o visual do botão
-    btnSubmit.value = "Salvar Alterações";
-    btnSubmit.style.background = "#2196f3";
-    
-    // Rola a página para o formulário
-    document.querySelector('aside').scrollIntoView({ behavior: 'smooth' });
-};
-
-// 4. EXCLUIR PRODUTO
+// 5. EXCLUIR PRODUTO
 window.excluirProduto = async (id) => {
-    if (confirm("Tem certeza que deseja excluir este produto?")) {
+    if (confirm("Deseja realmente apagar esta película do catálogo?")) {
         try {
-            await fetch(`http://localhost:3000/api/produtos/${id}`, { method: 'DELETE' });
-            buscarProdutos();
+            const response = await fetch(`${API_URL}/api/produtos/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                alert("Produto removido!");
+                buscarProdutos(); // Atualiza a tabela
+            } else {
+                alert("Erro ao excluir. Verifique se sua sessão não expirou.");
+            }
         } catch (error) {
-            alert("Erro ao excluir.");
+            console.error("Erro na exclusão:", error);
+            alert("Erro de conexão com o servidor.");
         }
     }
 };
 
-// 5. EVENTO DE SUBMIT (Cadastrar OU Editar)
+// 6. EVENTO DE SUBMIT (Cadastrar OU Editar)
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // Mostra um "Carregando" no botão
+    const textoOriginal = btnSubmit.value;
+    btnSubmit.value = "Enviando...";
+    btnSubmit.disabled = true;
 
     const formData = new FormData();
     formData.append('nome', document.getElementById('nome').value);
@@ -114,35 +123,44 @@ form.addEventListener('submit', async (e) => {
     }
 
     try {
-        let url = 'http://localhost:3000/api/produtos';
+        let url = `${API_URL}/api/produtos`;
         let metodo = 'POST';
 
-        // Se estiver editando, muda a URL e o Método (PUT)
         if (modoEdicao) {
-            url = `http://localhost:3000/api/produtos/${idEdicao}`;
-            metodo = 'PUT'; 
+            url = `${API_URL}/api/produtos/${idEdicao}`;
+            metodo = 'PUT'; // O backend já está preparado para PUT
         }
 
         const response = await fetch(url, {
             method: metodo,
-            body: formData
+            headers: {
+                "Authorization": `Bearer ${token}`
+            },
+            body: formData // Não definimos Content-Type aqui, o navegador faz isso para o FormData
         });
 
         if (response.ok) {
-            alert(modoEdicao ? "Produto atualizado!" : "Produto cadastrado!");
+            alert(modoEdicao ? "✅ Película atualizada com sucesso!" : "✅ Nova película cadastrada!");
             
-            // Reseta o estado do formulário
+            // Reset do estado
             modoEdicao = false;
             idEdicao = null;
             btnSubmit.value = "Cadastrar Produto";
             btnSubmit.style.background = "#ca0d5c";
-            
             form.reset();
             buscarProdutos();
+        } else {
+            const erro = await response.json();
+            alert(`Erro: ${erro.erro || "Ação não autorizada"}`);
         }
     } catch (error) {
         console.error("Erro no envio:", error);
+        alert("Erro de conexão. O servidor está rodando?");
+    } finally {
+        btnSubmit.disabled = false;
+        if (!modoEdicao) btnSubmit.value = "Cadastrar Produto";
     }
 });
 
+// Inicializa a tabela ao abrir a página
 buscarProdutos();
