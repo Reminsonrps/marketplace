@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo de Películas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #fffafc;
+    }
+
+    header {
+      background: #ff6b81;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .busca {
+      text-align: center;
+      margin: 1rem;
+    }
+
+    .busca input {
+      padding: 0.5rem;
+      width: 60%;
+      max-width: 400px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .produtos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 10px;
+      text-align: center;
+    }
+
+    .card img {
+      width: 100%;
+      max-width: 150px;
+      border-radius: 6px;
+    }
+
+    .card h3 {
+      margin: 0.5rem 0;
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .card button {
+      background: #ff6b81;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .card button:hover,
+    .carrinho button:hover {
+      background-color: #e85c72;
+      transform: scale(1.05);
+      transition: all 0.2s ease-in-out;
+    }
+
+    .carrinho {
+      background: #fce4ec;
+      padding: 1rem 2rem;
+      margin: 2rem;
+      border-radius: 10px;
+    }
+
+    .carrinho ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .carrinho li {
+      margin-bottom: 0.5rem;
+    }
+
+    .total {
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+
+    .carrinho button {
+      margin-right: 10px;
+    }
+    img:hover {
+      transform: scale(2.05);
+      transition: all 0.2s ease-in-out;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Películas para Unhas</h1>
+    <p>Escolha seus modelos favoritos e envie seu pedido</p>
+  </header>
+
+  <section class="busca">
+    <input type="text" id="campoBusca" placeholder="Buscar produto por nome..." oninput="filtrarProdutos()" />
+  </section>
+
+  <section class="produtos" id="cards"></section>
+
+  <section class="carrinho">
+    <h2>🛒 Carrinho</h2>
+    <ul id="lista-carrinho"></ul>
+    <p class="total">Total: R$ <span id="total">0.00</span></p>
+    <button onclick="enviarPedido()">Enviar Pedido</button>
+    <button onclick="limparCarrinho()">Limpar Carrinho</button>
+  </section>
+
+  <script src="./js/cleane_peliculas.js">
+
+  </script>
+
+</body>
+</html>

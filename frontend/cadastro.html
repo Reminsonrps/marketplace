@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo - CleaneSite</title>
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding-bottom: 60px;
+    }
+
+    header {
+      background-color: #ca0d5c;
+      color: #fff;
+      padding: 20px 0;
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    main { padding: 20px; }
+
+    .conteudo {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap-reverse;
+      gap: 20px;
+    }
+
+    aside {
+      flex: 1;
+      min-width: 300px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      height: fit-content;
+    }
+
+    .tabela {
+      flex: 2;
+      min-width: 350px;
+      overflow-x: auto;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .itens h2 {
+      text-align: center;
+      color: #ca0d5c;
+      margin-top: 0;
+    }
+
+    .itens label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #444;
+    }
+
+    .itens input, .itens textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .itens input[type="submit"] {
+      background-color: #ca0d5c;
+      color: #fff;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .itens input[type="submit"]:hover {
+      background-color: #a80b48;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background-color: #f8f8f8;
+      color: #ca0d5c;
+      padding: 15px;
+      border-bottom: 2px solid #ca0d5c;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      vertical-align: middle;
+    }
+
+    .btn-acao {
+      border: none;
+      background: none;
+      padding: 0;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+
+    .btn-acao:hover { transform: scale(1.1); }
+
+    footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #ca0d5c;
+      color: white;
+      text-align: center;
+      padding: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <header>Gerenciador de Estoque</header>
+
+  <main>
+    <section class="conteudo">
+      <!-- Tabela de Produtos -->
+      <div class="tabela">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Preço</th>
+              <th>Preview</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="corpo-tabela">
+            <!-- Linhas geradas dinamicamente pelo cadastro.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Formulário de Cadastro/Edição -->
+      <aside>
+        <form id="cadastrar" class="itens">
+          <h2>Dados do Produto</h2>
+
+          <label for="nome">Nome do Produto</label>
+          <input type="text" id="nome" name="nome" placeholder="Ex: Película Floral Luxo" required>
+
+          <label for="descricao">Descrição Detalhada</label>
+          <textarea id="descricao" name="descricao" rows="4" placeholder="Descreva o material, tamanho..." required></textarea>
+
+          <label for="preco">Preço (R$)</label>
+          <input type="number" id="preco" name="preco" step="0.01" placeholder="0.00" required>
+
+          <label for="estoque">Quantidade em Estoque</label>
+           <input type="number" id="estoque" name="estoque" placeholder="0" required>
+
+          <label for="imagem">Foto do Produto</label>
+          <input type="file" id="imagem" name="imagem" accept="image/*">
+
+          <input type="submit" value="Cadastrar Produto">
+        </form>
+      </aside>
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2026 CleaneSite - Painel de Controle Administrativo
+  </footer>
+
+  <!-- Script de integração -->
+  <script src="cadastro.js"></script>
+</body>
+</html>

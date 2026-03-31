@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unha de Cleane</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background-color: #fffafc;
+      color: #333;
+    }
+
+    header {
+      background-color: #ff6b81;
+      padding: 20px;
+      text-align: center;
+      color: white;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin: 0;
+    }
+
+    .banner {
+      background-image: url('https://cdn.pixabay.com/photo/2017/08/06/00/01/nail-art-2588273_1280.jpg');
+      background-size: cover;
+      background-position: center;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+      text-shadow: 1px 1px 4px #000;
+    }
+
+    .produtos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 2rem;
+    }
+
+    .card {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .card img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    .card h3 {
+      margin: 10px 0;
+      font-size: 1.2rem;
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .card button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #ff6b81;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .card button:hover {
+      background-color: #ff4c61;
+    }
+
+    .carrinho {
+      background-color: #fce4ec;
+      padding: 1rem 2rem;
+      margin: 2rem;
+      border-radius: 10px;
+    }
+
+    .carrinho h2 {
+      margin-bottom: 1rem;
+    }
+
+    .carrinho ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .carrinho li {
+      margin-bottom: 10px;
+    }
+
+    footer {
+      background-color: #ff6b81;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+    }
+
+    .social-icons img {
+      width: 32px;
+      margin: 0 10px;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 1.8rem;
+      }
+
+      .banner {
+        font-size: 1.5rem;
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Unha de Cleane</h1>
+    <p>Adesivos artesanais e joias para unhas</p>
+  </header>
+
+  <div class="banner">
+    Destaque sua beleza com arte nas unhas 💅
+  </div>
+
+  <section class="produtos">
+  <div class="filtro" style="grid-column: span 3; text-align: center; margin-bottom: 1rem;">
+    <label for="filtro-produtos">Filtrar Produtos:</label>
+    <select id="filtro-produtos">
+      <option value="todos">Todos</option>
+      <option value="a">Carimbo</option>
+      <option value="joias">Joias</option>
+      <option value="floral">Florais</option>
+    </select>
+  </div>
+
+  <!-- Cards originais -->
+  <div class="card" data-categoria="adesivos floral">
+  <img src="https://cdn.pixabay.com/photo/2017/08/06/00/01/nail-art-2588273_1280.jpg" alt="Adesivo Floral" />
+  <h3>Adesivo Floral</h3>
+  <p>Feito à mão com detalhes delicados</p>
+  <p><strong>Preço: R$ 12,00</strong></p>
+  <button class="btn-produto">Adicionar ao Carrinho</button>
+</div>
+
+<div class="card" data-categoria="joias">
+  <img src="clea1.jpg" alt="Joia de Unha" />
+  <h3>Joia de Unha</h3>
+  <p>Luxo e brilho para ocasiões especiais</p>
+  <p><strong>Preço: R$ 28,00</strong></p>
+  <button class="btn-produto">Adicionar ao Carrinho</button>
+</div>
+
+<div class="card" data-categoria="adesivos">
+  <img src="https://cdn.pixabay.com/photo/2017/08/06/00/01/nail-art-2588272_1280.jpg" alt="Adesivo com Carimbo" />
+  <h3>Adesivo com Carimbo</h3>
+  <p>Design moderno e aplicação fácil</p>
+  <p><strong>Preço: R$ 10,00</strong></p>
+  <button class="btn-produto">Adicionar ao Carrinho</button>
+</div>
+
+<div class="card" data-categoria="joias">
+  <img src="https://cdn.pixabay.com/photo/2016/11/29/03/53/nail-1867769_1280.jpg" alt="Joia Luxo" />
+  <h3>Joia Luxo</h3>
+  <p>Detalhes sofisticados para festas</p>
+  <p><strong>Preço: R$ 35,00</strong></p>
+  <button class="btn-produto">Adicionar ao Carrinho</button>
+</div>
+
+<div class="card" data-categoria="adesivos floral">
+  <img src="https://cdn.pixabay.com/photo/2017/08/06/00/01/nail-art-2588274_1280.jpg" alt="Adesivo Rosa Floral" />
+  <h3>Adesivo Rosa Floral</h3>
+  <p>Romântico e delicado para o dia a dia</p>
+  <p><strong>Preço: R$ 14,00</strong></p>
+  <button class="btn-produto">Adicionar ao Carrinho</button>
+</div>
+
+<div class="card" data-categoria="adesivos">
+  <img src="https://cdn.pixabay.com/photo/2017/08/06/00/01/nail-art-2588275_1280.jpg" alt="Adesivo Moderno" />
+  <h3>Adesivo Moderno</h3>
+  <p>Estilo contemporâneo e ousado</p>
+  <p><strong>Preço: R$ 15,00</strong></p>
+  <button class="btn-produto">Adicionar ao Carrinho</button>
+</div>
+</section>
+
+  <section class="carrinho">
+  
+ <div >
+    <h2>Seu Carrinho</h2>
+    <div id="carrinho">
+
+    </div>
+ 
+    <button id="finaliza">Finalizar Compra</button>
+
+
+
+
+ </div>
+
+  </section>
+
+  <footer>
+    <p>© 2025 Unha de Cleane. Todos os direitos reservados.</p>
+    <div class="social-icons">
+      <a href="" target="_blank">
+        <img src="clea1." alt="Instagram" />
+      </a>
+      <a href="https://www.facebook.com/seuusuario" target="_blank">
+        <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" />
+      </a>
+    </div>
+    <section style="text-align: center; padding: 2rem;">
+  <h2>📸 Adicione sua imagem personalizada</h2>
+  <input type="file" id="img-input" accept="image/*" />
+  <br><br>
+  <img id="img-preview" alt="Imagem carregada" style="max-width: 300px; border-radius: 10px;" />
+</section>
+  </footer>
+ <script src="cleane_peliculas.js"></script>
+
+</body>
+</html>

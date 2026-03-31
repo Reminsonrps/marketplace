@@ -1,0 +1,19 @@
+/target/
+
+# Dependências (nunca envie esta pasta)
+node_modules/
+
+# Segurança e Configurações (CONTÉM SUAS SENHAS!)
+.env
+
+# Arquivos temporários de upload local
+uploads/
+
+# Arquivos do Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Logs de erro
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
