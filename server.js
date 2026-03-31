@@ -49,7 +49,7 @@ const ADMIN_USER = {
   role: "admin"
 };
 
-// --- ROTA DE LOGIN (CORRIGIDA) ---
+// --- ROTA DE LOGIN ---
 app.post("/api/login", (req, res) => {
   const { usuario, senha } = req.body;
 
@@ -86,6 +86,8 @@ function verificarAdmin(req, res, next) {
 }
 
 // --- ROTAS DA API ---
+
+// 1. Listar Produtos
 app.get('/api/produtos', async (req, res) => {
   try {
     const produtos = await Produto.find().sort({ dataCriacao: -1 });
@@ -95,6 +97,7 @@ app.get('/api/produtos', async (req, res) => {
   }
 });
 
+// 2. Cadastrar Produto (POST)
 app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, res) => {
   try {
     const { nome, descricao, preco, categoria, estoque } = req.body;
@@ -125,6 +128,42 @@ app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, r
   }
 });
 
+// 3. Atualizar Produto (PUT) - ADICIONADO PARA FUNCIONAR O EDITAR
+app.put('/api/produtos/:id', verificarAdmin, upload.single('imagem'), async (req, res) => {
+  try {
+    const { nome, descricao, preco, categoria, estoque } = req.body;
+    let dadosParaAtualizar = {
+      nome,
+      descricao,
+      preco: Number(preco) || 0,
+      categoria,
+      estoque: Number(estoque) || 0
+    };
+
+    if (req.file) {
+      const resultado = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'cleanesite_produtos'
+      });
+      dadosParaAtualizar.imagemUrl = resultado.secure_url;
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    }
+
+    const produtoAtualizado = await Produto.findByIdAndUpdate(
+      req.params.id, 
+      dadosParaAtualizar, 
+      { new: true }
+    );
+
+    if (!produtoAtualizado) return res.status(404).json({ erro: "Produto não encontrado" });
+    
+    res.json(produtoAtualizado);
+  } catch (err) {
+    console.error("Erro ao atualizar:", err);
+    res.status(500).json({ erro: "Erro ao editar produto" });
+  }
+});
+
+// 4. Excluir Produto (DELETE)
 app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
   try {
     await Produto.findByIdAndDelete(req.params.id);
@@ -137,7 +176,6 @@ app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
 // --- SERVIR FRONTEND ---
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Regex para servir o index.html sem conflitar com a API
 app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
@@ -148,6 +186,6 @@ const PORT = process.env.PORT || 3000;
 
 mongoose.connect(MONGO_URI)
   .then(() => {
-    app.listen(PORT, () => console.log(`🚀 Servidor ativo: http://localhost:${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 Servidor ativo na porta ${PORT}`));
   })
   .catch(err => console.error("❌ Erro no MongoDB:", err));
