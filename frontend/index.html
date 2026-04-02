@@ -5,18 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cleane Películas - Catálogo</title>
   <style>
-    /* Estilos globais */
+    /* 1. ESTILOS GLOBAIS E RESET */
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
       background: #fffafc;
       color: #333;
+      line-height: 1.5;
     }
 
     header {
       background: #ff6b81;
       color: white;
-      padding: 2rem 1rem;
+      padding: 2.5rem 1rem;
       text-align: center;
       position: relative;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -25,160 +30,179 @@
     .admin-area {
       position: absolute;
       top: 10px;
-      right: 15px;
+      right: 10px;
+      display: flex;
+      gap: 5px;
     }
 
     .admin-area button {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.2);
       color: white;
-      border: 1px solid rgba(255,255,255,0.4);
-      padding: 0.4rem 0.8rem;
-      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
       cursor: pointer;
-      font-size: 0.75rem;
-      transition: background 0.3s;
+      font-size: 0.7rem;
+      transition: 0.3s;
     }
 
-    .admin-area button:hover {
-      background: rgba(0, 0, 0, 0.6);
-    }
-
-    /* Busca */
+    /* 2. BUSCA RESPONSIVA */
     .busca {
       text-align: center;
       margin: 2rem 1rem;
     }
 
     .busca input {
-      padding: 0.8rem;
-      width: 90%;
-      max-width: 500px;
-      border-radius: 25px;
-      border: 1px solid #ffccd5;
+      padding: 0.8rem 1.2rem;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 30px;
+      border: 2px solid #ffccd5;
       outline: none;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      font-size: 1rem; /* Evita zoom no iOS */
+      transition: 0.3s;
     }
 
     .busca input:focus {
       border-color: #ff6b81;
+      box-shadow: 0 0 8px rgba(255, 107, 129, 0.2);
     }
 
-    /* Grid de Produtos */
+    /* 3. GRID DE PRODUTOS RESPONSIVO */
     .produtos {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem;
-      padding: 1rem;
+      /* minmax(250px) garante que os cards não fiquem muito estreitos */
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 20px;
       max-width: 1200px;
       margin: 0 auto;
     }
 
     .card {
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
       padding: 15px;
       text-align: center;
-      transition: transform 0.3s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.3s ease;
     }
 
     .card:hover {
       transform: translateY(-5px);
     }
 
+    /* Imagem sempre quadrada e padronizada */
     .card img {
       width: 100%;
-      height: 180px;
+      aspect-ratio: 1 / 1; 
       object-fit: cover;
-      border-radius: 8px;
-      cursor: zoom-in;
-      transition: transform 0.3s ease;
-    }
-
-    .card img:hover {
-      transform: scale(1.1); /* Zoom mais suave para não quebrar o layout */
+      border-radius: 10px;
+      margin-bottom: 15px;
     }
 
     .card h3 {
-      margin: 10px 0 5px;
+      margin: 0 0 10px;
       color: #ff4d6d;
+      font-size: 1.2rem;
     }
 
+    /* Ajuste do texto: agora ele aparece por completo e empurra o botão */
     .card p {
-      font-size: 0.85rem;
-      color: #777;
-      height: 70px;
-      /* overflow: hidden; */
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 20px;
+      min-height: 50px; /* Garante alinhamento visual básico */
+    }
+
+    .card .preco {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+      display: block;
     }
 
     .card button {
       background: #ff6b81;
       color: white;
       border: none;
-      padding: 0.7rem 1.2rem;
-      border-radius: 25px;
+      padding: 0.8rem;
+      border-radius: 50px;
       cursor: pointer;
       font-weight: bold;
       width: 100%;
-      transition: background 0.3s;
+      transition: 0.3s;
     }
 
     .card button:hover {
       background: #e85c72;
     }
 
-    /* Carrinho */
+    /* 4. CARRINHO AJUSTADO */
     .carrinho {
       background: #ffeef2;
-      padding: 2rem;
-      margin: 2rem auto;
+      padding: 1.5rem;
+      margin: 2rem 1rem;
       max-width: 800px;
-      border-radius: 15px;
+      border-radius: 20px;
       border: 2px dashed #ffb3c1;
     }
 
-    .carrinho h2 {
-      color: #ff4d6d;
-      margin-top: 0;
-    }
-
-    .carrinho ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .total {
-      font-size: 1.2rem;
-      font-weight: bold;
-      text-align: right;
-      border-top: 1px solid #ffccd5;
-      padding-top: 10px;
+    /* Centralizar o carrinho em telas grandes */
+    @media (min-width: 800px) {
+      .carrinho { margin: 3rem auto; }
     }
 
     .carrinho-acoes {
       display: flex;
       gap: 10px;
-      justify-content: flex-end;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
     }
 
     .btn-enviar {
-      background: #25d366; /* Cor do WhatsApp */
+      flex: 2;
+      background: #25d366;
       color: white;
       border: none;
-      padding: 0.8rem 1.5rem;
-      border-radius: 25px;
+      padding: 1rem;
+      border-radius: 50px;
       cursor: pointer;
       font-weight: bold;
+      font-size: 1rem;
     }
 
     .btn-limpar {
-      background: #999;
+      flex: 1;
+      background: #bbb;
       color: white;
       border: none;
-      padding: 0.8rem 1.5rem;
-      border-radius: 25px;
+      padding: 1rem;
+      border-radius: 50px;
       cursor: pointer;
+    }
+
+    /* 5. MEDIA QUERIES PARA CELULARES PEQUENOS */
+    @media (max-width: 480px) {
+      header { padding: 3rem 1rem 1.5rem; }
+      
+      .produtos {
+        grid-template-columns: 1fr; /* Um card por linha em telas muito pequenas */
+        padding: 15px;
+      }
+
+      .carrinho-acoes {
+        flex-direction: column;
+      }
+      
+      .admin-area {
+        width: 100%;
+        justify-content: center;
+        right: 0;
+      }
     }
   </style>
 </head>
@@ -189,26 +213,30 @@
     <p>Modelos exclusivos para deixar suas unhas incríveis!</p>
 
     <div class="admin-area">
-      <button id="btnLogin">Acesso Admin</button>
-      <button id="btnLogout">Sair</button>
+      <button id="btnLogin" onclick="window.location.href='login.html'">Login</button>
+      <button id="btnLogout" style="display:none;">Sair</button>
     </div>
   </header>
 
   <section class="busca">
-    <input type="text" id="campoBusca" placeholder="🔍 Digite o que procura (ex: floral, glitter...)" />
+    <input type="text" id="campoBusca" placeholder="🔍 Procure por floral, glitter, francesa..." />
   </section>
 
   <main class="produtos" id="cards">
-    <p style="text-align: center; grid-column: 1/-1;">Carregando catálogo...</p>
+    <p style="text-align: center; grid-column: 1/-1;">✨ Carregando as melhores películas para você...</p>
   </main>
 
-  <section class="carrinho">
+  <section class="carrinho" id="secao-carrinho">
     <h2>🛒 Seu Pedido</h2>
-    <ul id="lista-carrinho">
-      <p style="color: #999;">O carrinho está vazio.</p>
+    <ul id="lista-carrinho" style="list-style: none; padding: 0;">
+      <li style="color: #999;">O carrinho está vazio.</li>
     </ul>
     
-    <p class="total">Total: R$ <span id="total">0.00</span></p>
+    <div style="text-align: right; margin-top: 15px;">
+      <p class="total" style="font-size: 1.2rem; font-weight: bold;">
+        Total: <span style="color: #ff4d6d;">R$ <span id="total">0.00</span></span>
+      </p>
+    </div>
     
     <div class="carrinho-acoes">
       <button class="btn-limpar" onclick="limparCarrinho()">Limpar</button>
