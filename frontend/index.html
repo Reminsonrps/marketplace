@@ -79,36 +79,60 @@
       margin: 0 auto;
     }
 
-    .card {
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-      padding: 15px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: transform 0.3s ease;
-    }
+   /* 1. Ajuste no Card para ser flexível */
+.card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  padding: 15px;
+  text-align: center;
+  
+  /* Configuração para o card esticar conforme o texto */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Garante que todos os cards da mesma linha tenham o mesmo tamanho */
+  transition: transform 0.3s ease;
+}
 
-    .card:hover {
-      transform: translateY(-5px);
-    }
+/* 2. Ajuste no Parágrafo (O segredo para o Redmi/Android) */
+.card p {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 10px 0 20px 0;
+  
+  /* Removemos o min-height fixo e deixamos o flex-grow agir */
+  flex-grow: 1; 
+  
+  /* Se você quiser que o texto apareça TODO, use estas linhas: */
+  height: auto; 
+  overflow: visible; 
+  display: block;
 
-    /* Imagem sempre quadrada e padronizada */
-    .card img {
-      width: 100%;
-      aspect-ratio: 1 / 1; 
-      object-fit: cover;
-      border-radius: 10px;
-      margin-bottom: 15px;
-    }
+  /* OPCIONAL: Se quiser que corte com "..." após 4 linhas, use:
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden; 
+  */
+}
 
-    .card h3 {
-      margin: 0 0 10px;
-      color: #ff4d6d;
-      font-size: 1.2rem;
-    }
+/* 3. Ajuste de Grid para telas mobile */
+@media (max-width: 480px) {
+  .produtos {
+    /* Diminuímos o minmax para o card não tentar ser largo demais no Redmi */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+    gap: 12px;
+    padding: 10px;
+  }
+  
+  .card {
+    padding: 10px; /* Menos espaço interno sobra mais para o texto */
+  }
+
+  .card h3 {
+    font-size: 1rem; /* Título um pouco menor no celular */
+  }
+}
 
     /* Ajuste do texto: agora ele aparece por completo e empurra o botão */
     .card p {
