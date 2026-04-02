@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs'; 
 import { fileURLToPath } from 'url';
 import { Produto } from './models/produto.js';
 import { v2 as cloudinary } from 'cloudinary';
@@ -16,78 +15,77 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- MIDDLEWARES ESSENCIAIS ---
+// --- MIDDLEWARES ---
 app.use(cors());
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
 // --- CONFIGURAÇÃO CLOUDINARY ---
+// Prioriza variáveis de ambiente para segurança
 cloudinary.config({ 
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dvunnmetj', 
-  api_key: process.env.CLOUDINARY_API_KEY || '122137693514899', 
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'tIOAPXNLtRRDxiuyKyDXUbt7DzE' 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY, 
+  api_secret: process.env.CLOUDINARY_API_SECRET 
 });
 
-// --- CONFIGURAÇÃO DO MULTER ---
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'uploads/';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); 
-    cb(null, dir); 
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// --- CONFIGURAÇÃO DO MULTER (MEMORY STORAGE) ---
+// No Render, salvar em pastas locais pode falhar. Usamos o buffer da memória.
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// --- SEGURANÇA (ADMIN) ---
+// --- SEGURANÇA ---
 const ADMIN_USER = {
-  usuario: process.env.ADMIN_USER || "cleaneadmin",
-  senha: process.env.ADMIN_PASS || "brasileira",
+  usuario: process.env.ADMIN_USER || "admin",
+  senha: process.env.ADMIN_PASS || "senha123",
   role: "admin"
 };
 
-// --- ROTA DE LOGIN ---
-app.post("/api/login", (req, res) => {
-  const { usuario, senha } = req.body;
-
-  if (usuario === ADMIN_USER.usuario && senha === ADMIN_USER.senha) {
-    const token = jwt.sign(
-      { usuario: ADMIN_USER.usuario, role: ADMIN_USER.role },
-      process.env.JWT_SECRET || "segredo_super_secreto",
-      { expiresIn: "4h" } 
+// --- FUNÇÃO AUXILIAR CLOUDINARY (STREAM UPLOAD) ---
+const uploadToCloudinary = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'cleanesite_produtos' },
+      (error, result) => {
+        if (result) resolve(result);
+        else reject(error);
+      }
     );
-    return res.json({ token });
-  } else {
-    return res.status(401).json({ erro: "Credenciais inválidas" });
-  }
-});
+    stream.end(fileBuffer);
+  });
+};
 
-// --- MIDDLEWARE DE PROTEÇÃO ---
+// --- MIDDLEWARES DE PROTEÇÃO ---
 function verificarAdmin(req, res, next) {
   const authHeader = req.headers["authorization"];
-  if (!authHeader) return res.status(401).json({ erro: "Acesso restrito. Faça login." });
+  if (!authHeader) return res.status(401).json({ erro: "Acesso restrito." });
 
   try {
     const token = authHeader.split(" ")[1]; 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "segredo_super_secreto");
-
-    if (decoded.role === "admin") {
-      req.user = decoded;
-      next();
-    } else {
-      res.status(403).json({ erro: "Acesso negado" });
-    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "segredo_fallback");
+    req.user = decoded;
+    next();
   } catch (err) {
-    res.status(401).json({ erro: "Sessão expirada. Faça login novamente." });
+    res.status(401).json({ erro: "Sessão expirada." });
   }
 }
 
 // --- ROTAS DA API ---
 
-// 1. Listar Produtos
+// Login
+app.post("/api/login", (req, res) => {
+  const { usuario, senha } = req.body;
+  if (usuario === ADMIN_USER.usuario && senha === ADMIN_USER.senha) {
+    const token = jwt.sign(
+      { usuario: ADMIN_USER.usuario, role: "admin" },
+      process.env.JWT_SECRET || "segredo_fallback",
+      { expiresIn: "8h" } 
+    );
+    return res.json({ token });
+  }
+  res.status(401).json({ erro: "Credenciais inválidas" });
+});
+
+// Listar
 app.get('/api/produtos', async (req, res) => {
   try {
     const produtos = await Produto.find().sort({ dataCriacao: -1 });
@@ -97,95 +95,53 @@ app.get('/api/produtos', async (req, res) => {
   }
 });
 
-// 2. Cadastrar Produto (POST)
+// Criar (POST)
 app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, res) => {
   try {
-    const { nome, descricao, preco, categoria, estoque } = req.body;
-    let imagemUrl = "https://via.placeholder.com/150"; 
+    const { nome, descricao, preco, estoque } = req.body;
+    let imagemUrl = "https://via.placeholder.com/150";
 
     if (req.file) {
-      const resultado = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'cleanesite_produtos'
-      });
-      imagemUrl = resultado.secure_url;
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path); 
+      const result = await uploadToCloudinary(req.file.buffer);
+      imagemUrl = result.secure_url;
     }
 
-    const novoProduto = new Produto({
-      nome,
-      descricao,
-      preco: Number(preco) || 0,
-      categoria,
-      estoque: Number(estoque) || 0, 
-      imagemUrl
-    });
-
-    await novoProduto.save();
-    res.status(201).json(novoProduto);
+    const novo = new Produto({ nome, descricao, preco: Number(preco), estoque: Number(estoque), imagemUrl });
+    await novo.save();
+    res.status(201).json(novo);
   } catch (err) {
-    console.error("Erro ao salvar:", err);
-    res.status(500).json({ erro: "Erro ao cadastrar produto" });
+    res.status(500).json({ erro: "Erro ao salvar" });
   }
 });
 
-// 3. Atualizar Produto (PUT) - ADICIONADO PARA FUNCIONAR O EDITAR
+// Editar (PUT)
 app.put('/api/produtos/:id', verificarAdmin, upload.single('imagem'), async (req, res) => {
   try {
-    const { nome, descricao, preco, categoria, estoque } = req.body;
-    let dadosParaAtualizar = {
-      nome,
-      descricao,
-      preco: Number(preco) || 0,
-      categoria,
-      estoque: Number(estoque) || 0
-    };
-
+    const updates = { ...req.body };
     if (req.file) {
-      const resultado = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'cleanesite_produtos'
-      });
-      dadosParaAtualizar.imagemUrl = resultado.secure_url;
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      const result = await uploadToCloudinary(req.file.buffer);
+      updates.imagemUrl = result.secure_url;
     }
 
-    const produtoAtualizado = await Produto.findByIdAndUpdate(
-      req.params.id, 
-      dadosParaAtualizar, 
-      { new: true }
-    );
-
-    if (!produtoAtualizado) return res.status(404).json({ erro: "Produto não encontrado" });
-    
-    res.json(produtoAtualizado);
+    const editado = await Produto.findByIdAndUpdate(req.params.id, updates, { new: true });
+    res.json(editado);
   } catch (err) {
-    console.error("Erro ao atualizar:", err);
-    res.status(500).json({ erro: "Erro ao editar produto" });
+    res.status(500).json({ erro: "Erro ao editar" });
   }
 });
 
-// 4. Excluir Produto (DELETE)
+// Excluir
 app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
   try {
     await Produto.findByIdAndDelete(req.params.id);
-    res.json({ mensagem: "Produto removido com sucesso!" });
+    res.json({ mensagem: "Removido!" });
   } catch (err) {
     res.status(500).json({ erro: "Erro ao excluir" });
   }
 });
 
-// --- SERVIR FRONTEND ---
-app.use(express.static(path.join(__dirname, 'frontend')));
-
-app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
-});
-
-// --- CONEXÃO E INICIALIZAÇÃO ---
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cleanesite';
+// --- INICIALIZAÇÃO ---
 const PORT = process.env.PORT || 3000;
-
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    app.listen(PORT, () => console.log(`🚀 Servidor ativo na porta ${PORT}`));
-  })
-  .catch(err => console.error("❌ Erro no MongoDB:", err));
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => app.listen(PORT, () => console.log(`🚀 On na porta ${PORT}`)))
+  .catch(err => console.error("Erro DB:", err));
