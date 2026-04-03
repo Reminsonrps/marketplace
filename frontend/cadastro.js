@@ -9,12 +9,18 @@ let modoEdicao = false;
 let idEdicao = null;
 let listaProdutosLocal = [];
 
-// 2. BUSCAR PRODUTOS (Melhorado com tratamento de erro)
+// 2. BUSCAR PRODUTOS
 async function buscarProdutos() {
-    try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+    const token = localStorage.getItem("token");
 
+    // Redireciona se não tiver token
+    if (!token) {
+        alert("Acesso restrito. Faça login.");
+        window.location.href = "index.html";
+        return;
+    }
+
+    try {
         const response = await fetch(`${API_URL}/api/produtos`, {
             method: 'GET',
             headers: {
@@ -26,6 +32,7 @@ async function buscarProdutos() {
         if (!response.ok) {
             if (response.status === 401) {
                 alert("Sessão expirada. Faça login novamente.");
+                localStorage.removeItem("token");
                 window.location.href = "index.html";
                 return;
             }
@@ -39,7 +46,7 @@ async function buscarProdutos() {
     }
 }
 
-// 3. ATUALIZAR TABELA (Mantido)
+// 3. ATUALIZAR TABELA
 function atualizarTabela(produtos) {
     listaProdutosLocal = produtos;
     if (!corpoTabela) return;
@@ -80,7 +87,7 @@ window.prepararEdicao = (id) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 5. EVENTO DE SUBMIT (CORRIGIDO)
+// 5. EVENTO DE SUBMIT
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -100,7 +107,6 @@ form.addEventListener('submit', async (e) => {
     }
 
     try {
-        // Lógica de URL Dinâmica
         let url = `${API_URL}/api/produtos`;
         let metodo = 'POST';
 
@@ -113,29 +119,28 @@ form.addEventListener('submit', async (e) => {
             method: metodo,
             headers: {
                 "Authorization": `Bearer ${tokenAtual}`
-                // IMPORTANTE: Não defina Content-Type aqui para FormData!
+                // Não defina Content-Type aqui para FormData!
             },
             body: formData 
         });
 
-        // Verificação se a resposta é JSON antes de ler
         const contentType = response.headers.get("content-type");
         
         if (response.ok) {
             alert(modoEdicao ? "✅ Atualizado com sucesso!" : "✅ Cadastrado com sucesso!");
-            location.reload(); // Recarrega para limpar o estado e atualizar a lista
+            location.reload();
         } else {
             if (contentType && contentType.includes("application/json")) {
                 const erroData = await response.json();
                 alert(`Erro: ${erroData.erro}`);
             } else {
-                alert(`Erro Crítico: O servidor retornou erro ${response.status}. Verifique se a rota PUT existe no backend.`);
+                alert(`Erro Crítico: O servidor retornou erro ${response.status}.`);
             }
         }
 
     } catch (error) {
         console.error("Erro fatal:", error);
-        alert("Erro de conexão. Verifique se o servidor no Render está 'Live'.");
+        alert("Erro de conexão. Verifique se o servidor está online.");
     } finally {
         btnSubmit.disabled = false;
         btnSubmit.value = modoEdicao ? "Salvar Alterações" : "Cadastrar Produto";
