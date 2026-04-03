@@ -7,22 +7,12 @@ const lista = document.getElementById('lista-carrinho');
 const totalSpan = document.getElementById('total');
 
 let carrinho = [];
-let todosOsProdutos = []; // Lista mestre vinda do banco
-
-// --- ISOLAMENTO DE CLIENTE ---
-function gerarIdUnico() {
-  return 'user-' + Date.now() + '-' + Math.floor(Math.random() * 100000);
-}
-let userId = localStorage.getItem("userId") || (function() {
-  const newId = gerarIdUnico();
-  localStorage.setItem("userId", newId);
-  return newId;
-})();
+let todosOsProdutos = []; 
 
 // --- GESTÃO DE TOKEN ---
 let token = localStorage.getItem("token") || null;
 
-// 2. LOGIN ADMIN
+// 2. LOGIN ADMIN (Simplificado)
 async function loginAdmin() {
   const usuario = prompt("Usuário:");
   const senha = prompt("Senha:");
@@ -36,20 +26,14 @@ async function loginAdmin() {
       body: JSON.stringify({ usuario, senha })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.erro || "Credenciais inválidas");
-    }
+    if (!response.ok) throw new Error("Credenciais inválidas");
 
     const data = await response.json();
-    token = data.token;
-    localStorage.setItem("token", token);
-
-    alert("Bem-vindo(a), Cleane!");
+    localStorage.setItem("token", data.token);
+    alert("Bem-vinda, Cleane!");
     window.location.href = "cadastro.html"; 
   } catch (err) {
-    console.error("Erro no login:", err);
-    alert(err.message || "Erro ao acessar o painel.");
+    alert("Erro ao acessar o painel.");
   }
 }
 
@@ -60,39 +44,32 @@ async function buscarProdutosDaAPI() {
     if (!response.ok) throw new Error("Erro ao buscar dados");
     
     todosOsProdutos = await response.json();
-    renderizarCards(todosOsProdutos); // Renderiza a lista completa no início
+    renderizarCards(todosOsProdutos); 
   } catch (error) {
     console.error("Erro ao carregar catálogo:", error);
     if (container) {
-        container.innerHTML = `<p style="color: red; text-align: center; grid-column: 1/-1;">
-            Ops! Servidor offline ou erro ao carregar.
-        </p>`;
+        container.innerHTML = `<p style="color: red; text-align: center; grid-column: 1/-1;">Servidor offline. Tente novamente em instantes.</p>`;
     }
   }
 }
 
-// 4. LÓGICA DO FILTRO EM TEMPO REAL
+// 4. LÓGICA DO FILTRO
 campoBusca?.addEventListener('input', () => {
   const termo = campoBusca.value.toLowerCase().trim();
-  
-  // Filtra na lista mestre (sem precisar ir no banco de novo)
   const produtosFiltrados = todosOsProdutos.filter(p => 
-    p.nome.toLowerCase().includes(termo) || 
-    p.descricao.toLowerCase().includes(termo)
+    (p.nome?.toLowerCase() || '').includes(termo) || 
+    (p.descricao?.toLowerCase() || '').includes(termo)
   );
-
   renderizarCards(produtosFiltrados);
 });
 
-// 5. RENDERIZAR CARDS NO HTML
+// 5. RENDERIZAR CARDS (AJUSTADO PARA RESPONSIVIDADE)
 function renderizarCards(listaProdutos) {
   if (!container) return;
   container.innerHTML = '';
   
   if (listaProdutos.length === 0) {
-    container.innerHTML = `<p style="text-align: center; grid-column: 1/-1; color: #999;">
-        Nenhuma película encontrada com esse nome. 🌸
-    </p>`;
+    container.innerHTML = `<p style="text-align: center; grid-column: 1/-1; color: #999;">Nenhuma película encontrada. 🌸</p>`;
     return;
   }
 
@@ -101,33 +78,34 @@ function renderizarCards(listaProdutos) {
     card.classList.add('card');
     const temEstoque = item.estoque > 0;
 
+    // Estrutura otimizada para o Flexbox do CSS
     card.innerHTML = `
-        <img src="${item.imagemUrl}" alt="${item.nome}" style="width:100%; border-radius:8px;">
-        <h3>${item.nome}</h3>
-        <p>${item.descricao}</p>
-        <p style="color: ${temEstoque ? '#28a745' : '#dc3545'}; font-weight: bold;">
-            ${temEstoque ? item.estoque + ' em estoque' : 'Esgotado'}
-        </p>
-        <span style="font-weight:bold; color:#ff6b81; font-size: 1.2rem;">
-            R$ ${Number(item.preco).toFixed(2)}
-        </span>
-        <br><br>
+        <img src="${item.imagemUrl}" alt="${item.nome}">
+        <div class="card-info">
+            <h3>${item.nome}</h3>
+            <p>${item.descricao}</p>
+            <span class="status-estoque" style="color: ${temEstoque ? '#28a745' : '#dc3545'};">
+                ${temEstoque ? item.estoque + ' em estoque' : 'Esgotado'}
+            </span>
+            <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
+        </div>
         <button onclick="adicionarAoCarrinho('${item._id}')" 
-            ${!temEstoque ? 'disabled style="background:#ccc; cursor: not-allowed;"' : ''}>
-            ${temEstoque ? '🛒 Adicionar ao Carrinho' : 'Indisponível'}
+            ${!temEstoque ? 'disabled class="btn-indisponivel"' : ''}>
+            ${temEstoque ? '🛒 Adicionar' : 'Indisponível'}
         </button>
     `;
     container.appendChild(card);
   });
 }
 
-// --- FUNÇÕES DO CARRINHO (GLOBAIS) ---
-
+// --- FUNÇÕES DO CARRINHO ---
 window.adicionarAoCarrinho = function(id) {
   const produto = todosOsProdutos.find(p => p._id === id);
   if (produto && produto.estoque > 0) {
     carrinho.push(produto);
     atualizarCarrinho();
+    // Feedback visual simples
+    alert(`${produto.nome} adicionado!`);
   }
 };
 
@@ -137,23 +115,21 @@ window.removerDoCarrinho = function(index) {
 };
 
 window.limparCarrinho = function() {
-  if(confirm("Deseja limpar todo o carrinho?")) {
+  if(confirm("Limpar carrinho?")) {
     carrinho = [];
     atualizarCarrinho();
   }
 };
 
 window.enviarPedido = function() {
-  if (carrinho.length === 0) return alert("Seu carrinho está vazio!");
+  if (carrinho.length === 0) return alert("Carrinho vazio!");
   
-  let mensagem = `*Novo Pedido - Cleane Películas*%0A%0A`;
+  let mensagem = `*Pedido - Cleane Películas*%0A%0A`;
   carrinho.forEach(item => {
     mensagem += `• ${item.nome} - R$ ${Number(item.preco).toFixed(2)}%0A`;
   });
   
   mensagem += `%0A*Total: R$ ${totalSpan.textContent}*`;
-  
-  // Link do WhatsApp com a mensagem formatada
   window.open(`https://wa.me/5573991350755?text=${mensagem}`, '_blank');
 };
 
@@ -167,18 +143,18 @@ function atualizarCarrinho() {
   } else {
     carrinho.forEach((item, index) => {
       const li = document.createElement('li');
-      li.style.display = "flex";
-      li.style.justifyContent = "space-between";
-      li.style.marginBottom = "5px";
+      li.className = "item-carrinho";
       li.innerHTML = `
-        <span>${item.nome} - R$ ${Number(item.preco).toFixed(2)}</span>
-        <button onclick="removerDoCarrinho(${index})" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">[x]</button>
+        <span>${item.nome}</span>
+        <div>
+            <span>R$ ${Number(item.preco).toFixed(2)}</span>
+            <button onclick="removerDoCarrinho(${index})">❌</button>
+        </div>
       `;
       lista.appendChild(li);
       total += Number(item.preco);
     });
   }
-  
   totalSpan.textContent = total.toFixed(2);
 }
 
@@ -186,9 +162,7 @@ function atualizarCarrinho() {
 document.getElementById("btnLogin")?.addEventListener("click", loginAdmin);
 document.getElementById("btnLogout")?.addEventListener("click", () => {
     localStorage.removeItem("token");
-    alert("Você saiu do painel admin.");
     location.reload();
 });
 
-// Começa a buscar os produtos assim que a página carrega
 buscarProdutosDaAPI();
