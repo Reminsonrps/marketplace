@@ -1,19 +1,19 @@
 // 1. Configurações Iniciais
-const API_URL = "https://cleane-peliculas.onrender.com";
+const API_URL = "https://cleane-peliculas.onrender.com"; 
 
-const container = document.getElementById('cards'); // catálogo
-const corpoTabela = document.getElementById('corpo-tabela'); // painel admin
+const container = document.getElementById('cards'); // usado na página de catálogo
+const corpoTabela = document.getElementById('corpo-tabela'); // usado na página de configuração
 const campoBusca = document.getElementById('campoBusca');
 const lista = document.getElementById('lista-carrinho');
 const totalSpan = document.getElementById('total');
 
 let carrinho = [];
-let todosOsProdutos = [];
+let todosOsProdutos = []; 
 
 // --- GESTÃO DE TOKEN ---
 let token = localStorage.getItem("token") || null;
 
-// 2. LOGIN ADMIN
+// 2. LOGIN ADMIN (Simplificado)
 async function loginAdmin() {
   const usuario = prompt("Usuário:");
   const senha = prompt("Senha:");
@@ -32,7 +32,7 @@ async function loginAdmin() {
     const data = await response.json();
     localStorage.setItem("token", data.token);
     alert("Bem-vinda, Cleane!");
-    window.location.href = "cadastro.html";
+    window.location.href = "cadastro.html"; 
   } catch (err) {
     alert("Erro ao acessar o painel.");
   }
@@ -41,14 +41,15 @@ async function loginAdmin() {
 // 3. BUSCAR PRODUTOS DA API
 async function buscarProdutosDaAPI() {
   try {
-    const response = await fetch(`${API_URL}/api/produtos`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
-    if (!response.ok) throw new Error("Erro ao buscar dados");
+    const response = await fetch(`${API_URL}/api/produtos`);
 
+
+    if (!response.ok) throw new Error("Erro ao buscar dados");
+    
     todosOsProdutos = await response.json();
     console.log("Produtos recebidos:", todosOsProdutos);
 
+    // Decide automaticamente onde renderizar
     if (container) {
       renderizarCards(todosOsProdutos);
     } else if (corpoTabela) {
@@ -65,21 +66,21 @@ async function buscarProdutosDaAPI() {
   }
 }
 
-// 4. FILTRO (apenas catálogo)
+// 4. LÓGICA DO FILTRO (apenas catálogo)
 campoBusca?.addEventListener('input', () => {
   const termo = campoBusca.value.toLowerCase().trim();
-  const produtosFiltrados = todosOsProdutos.filter(p =>
-    (p.nome?.toLowerCase() || '').includes(termo) ||
+  const produtosFiltrados = todosOsProdutos.filter(p => 
+    (p.nome?.toLowerCase() || '').includes(termo) || 
     (p.descricao?.toLowerCase() || '').includes(termo)
   );
   renderizarCards(produtosFiltrados);
 });
 
-// 5A. RENDERIZAR CARDS
+// 5A. RENDERIZAR CARDS (catálogo)
 function renderizarCards(listaProdutos) {
   if (!container) return;
   container.innerHTML = '';
-
+  
   if (listaProdutos.length === 0) {
     container.innerHTML = `<p style="text-align: center; grid-column: 1/-1; color: #999;">Nenhuma película encontrada. 🌸</p>`;
     return;
@@ -109,7 +110,7 @@ function renderizarCards(listaProdutos) {
   });
 }
 
-// 5B. RENDERIZAR TABELA
+// 5B. RENDERIZAR TABELA (configuração)
 function renderizarTabela(listaProdutos) {
   if (!corpoTabela) return;
   corpoTabela.innerHTML = '';
@@ -136,7 +137,7 @@ function renderizarTabela(listaProdutos) {
   });
 }
 
-// --- FUNÇÕES DO CARRINHO ---
+// --- FUNÇÕES DO CARRINHO (apenas catálogo) ---
 window.adicionarAoCarrinho = function(id) {
   const produto = todosOsProdutos.find(p => p._id === id);
   if (produto && produto.estoque > 0) {
@@ -152,7 +153,7 @@ window.removerDoCarrinho = function(index) {
 };
 
 window.limparCarrinho = function() {
-  if (confirm("Limpar carrinho?")) {
+  if(confirm("Limpar carrinho?")) {
     carrinho = [];
     atualizarCarrinho();
   }
@@ -160,12 +161,12 @@ window.limparCarrinho = function() {
 
 window.enviarPedido = function() {
   if (carrinho.length === 0) return alert("Carrinho vazio!");
-
+  
   let mensagem = `*Pedido - Cleane Películas*%0A%0A`;
   carrinho.forEach(item => {
     mensagem += `• ${item.nome} - R$ ${Number(item.preco).toFixed(2)}%0A`;
   });
-
+  
   mensagem += `%0A*Total: R$ ${totalSpan.textContent}*`;
   window.open(`https://wa.me/5573991350755?text=${mensagem}`, '_blank');
 };
@@ -198,8 +199,8 @@ function atualizarCarrinho() {
 // --- INICIALIZAÇÃO ---
 document.getElementById("btnLogin")?.addEventListener("click", loginAdmin);
 document.getElementById("btnLogout")?.addEventListener("click", () => {
-  localStorage.removeItem("token");
-  location.reload();
+    localStorage.removeItem("token");
+    location.reload();
 });
 
 buscarProdutosDaAPI();
