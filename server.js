@@ -98,7 +98,7 @@ app.get('/api/produtos', async (req, res) => {
 //testar
 app.get("/api/ping", (req, res) => {
   res.json({ status: "ok" });
-});git ini
+});
 
 // Criar (POST)
 app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, res) => {
