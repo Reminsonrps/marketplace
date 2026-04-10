@@ -27,7 +27,6 @@ console.log("Cloudinary conectado:", {
 console.log("Timestamp atual:", Math.floor(Date.now() / 1000));
 console.log("Data atual:", new Date().toISOString());
 
-
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,13 +35,6 @@ const __dirname = path.dirname(__filename);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// --- CONFIGURAÇÃO CLOUDINARY ---
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 // --- CONFIGURAÇÃO DO MULTER ---
 const storage = multer.memoryStorage();
@@ -59,7 +51,10 @@ const ADMIN_USER = {
 const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: 'cleanesite_produtos' },
+      {
+        folder: 'cleanesite_produtos',
+        timestamp: Math.floor(Date.now() / 1000) // força timestamp correto
+      },
       (error, result) => {
         if (result) resolve(result);
         else reject(error);
@@ -125,10 +120,10 @@ app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, r
     const novo = new Produto({ nome, descricao, preco: Number(preco), estoque: Number(estoque), imagemUrl });
     await novo.save();
     res.status(201).json(novo);
-} catch (err) {
-  console.error("Erro ao salvar produto:", err); // log no servidor
-  res.status(500).json({ erro: err.message || "Erro ao salvar" });
-}
+  } catch (err) {
+    console.error("Erro ao salvar produto:", err); // log no servidor
+    res.status(500).json({ erro: err.message || "Erro ao salvar" });
+  }
 });
 
 app.put('/api/produtos/:id', verificarAdmin, upload.single('imagem'), async (req, res) => {
@@ -150,10 +145,10 @@ app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
   try {
     await Produto.findByIdAndDelete(req.params.id);
     res.json({ mensagem: "Removido!" });
-} catch (err) {
-  console.error("Erro ao editar produto:", err);
-  res.status(500).json({ erro: err.message || "Erro ao editar" });
-}
+  } catch (err) {
+    console.error("Erro ao editar produto:", err);
+    res.status(500).json({ erro: err.message || "Erro ao editar" });
+  }
 });
 
 // --- SERVIR FRONTEND ---
