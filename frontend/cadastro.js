@@ -63,8 +63,18 @@ async function salvarProduto(formData) {
       body: formData
     });
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.erro || `Erro HTTP ${response.status}`);
+    const text = await response.text(); // captura como texto cru
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { erro: text };
+    }
+
+    if (!response.ok) {
+      console.error("Erro detalhado do servidor:", data);
+      throw new Error(data.erro || `Erro HTTP ${response.status}`);
+    }
 
     alert(editandoId ? "Produto atualizado com sucesso!" : "Produto cadastrado com sucesso!");
     document.getElementById("cadastrar").reset();
@@ -97,8 +107,18 @@ async function removerProduto(id) {
       headers: { "Authorization": `Bearer ${token}` }
     });
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.erro || `Erro HTTP ${response.status}`);
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { erro: text };
+    }
+
+    if (!response.ok) {
+      console.error("Erro detalhado do servidor:", data);
+      throw new Error(data.erro || `Erro HTTP ${response.status}`);
+    }
 
     alert("Produto removido!");
     buscarProdutosDaAPI();
