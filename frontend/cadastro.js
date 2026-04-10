@@ -42,8 +42,6 @@ async function loginAdmin() {
 async function buscarProdutosDaAPI() {
   try {
     const response = await fetch(`${API_URL}/api/produtos`);
-
-
     if (!response.ok) throw new Error("Erro ao buscar dados");
     
     todosOsProdutos = await response.json();
