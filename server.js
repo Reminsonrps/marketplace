@@ -12,20 +12,18 @@ import jwt from "jsonwebtoken";
 dotenv.config();
 
 // --- CONFIGURAÇÃO DO CLOUDINARY ---
+// O .trim() remove espaços acidentais que causam o erro "Invalid Signature"
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME?.trim(),
+  api_key: process.env.CLOUDINARY_API_KEY?.trim(),
+  api_secret: process.env.CLOUDINARY_API_SECRET?.trim()
 });
 
-console.log("Cloudinary conectado:", {
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY ? "OK" : "Faltando",
-  api_secret: process.env.CLOUDINARY_API_SECRET ? "OK" : "Faltando"
-});
-
-console.log("Timestamp atual:", Math.floor(Date.now() / 1000));
-console.log("Data atual:", new Date().toISOString());
+// Logs de verificação (ajudam a debugar no terminal)
+console.log("--- Verificação de Configuração ---");
+console.log("Cloudinary Cloud Name:", cloudinary.config().cloud_name || "NÃO CONFIGURADO");
+console.log("MongoDB URI:", process.env.MONGO_URI ? "OK" : "Faltando");
+console.log("-----------------------------------");
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -52,8 +50,8 @@ const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: 'cleanesite_produtos'
-        // ❌ não incluir timestamp aqui
+        folder: 'cleanesite_produtos',
+        // O SDK gera o timestamp e a assinatura automaticamente aqui
       },
       (error, result) => {
         if (result) resolve(result);
@@ -102,7 +100,6 @@ app.get('/api/produtos', async (req, res) => {
   }
 });
 
-// rota de teste
 app.get("/api/ping", (req, res) => {
   res.json({ status: "ok" });
 });
@@ -117,11 +114,18 @@ app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, r
       imagemUrl = result.secure_url;
     }
 
-    const novo = new Produto({ nome, descricao, preco: Number(preco), estoque: Number(estoque), imagemUrl });
+    const novo = new Produto({ 
+      nome, 
+      descricao, 
+      preco: Number(preco), 
+      estoque: Number(estoque), 
+      imagemUrl 
+    });
+    
     await novo.save();
     res.status(201).json(novo);
   } catch (err) {
-    console.error("Erro ao salvar produto:", err); // log no servidor
+    console.error("Erro ao salvar produto:", err);
     res.status(500).json({ erro: err.message || "Erro ao salvar" });
   }
 });
@@ -146,20 +150,20 @@ app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
     await Produto.findByIdAndDelete(req.params.id);
     res.json({ mensagem: "Removido!" });
   } catch (err) {
-    console.error("Erro ao editar produto:", err);
-    res.status(500).json({ erro: err.message || "Erro ao editar" });
+    console.error("Erro ao deletar produto:", err);
+    res.status(500).json({ erro: err.message || "Erro ao deletar" });
   }
 });
 
 // --- SERVIR FRONTEND ---
 app.use(express.static(path.join(__dirname, "frontend")));
 
-app.get("/", (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
 
 // --- INICIALIZAÇÃO ---
 const PORT = process.env.PORT || 3000;
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => app.listen(PORT, () => console.log(`🚀 On na porta ${PORT}`)))
-  .catch(err => console.error("Erro DB:", err));
+  .then(() => app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`)))
+  .catch(err => console.error("Erro crítico ao conectar no MongoDB:", err));
