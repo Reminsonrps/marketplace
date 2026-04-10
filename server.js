@@ -52,8 +52,8 @@ const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: 'cleanesite_produtos',
-        timestamp: Math.floor(Date.now() / 1000) // força timestamp correto
+        folder: 'cleanesite_produtos'
+        // ❌ não incluir timestamp aqui
       },
       (error, result) => {
         if (result) resolve(result);
