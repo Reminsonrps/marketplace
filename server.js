@@ -17,19 +17,17 @@ const __dirname = path.dirname(__filename);
 
 // --- MIDDLEWARES ---
 app.use(cors());
-app.use(express.json()); 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // --- CONFIGURAÇÃO CLOUDINARY ---
-// Prioriza variáveis de ambiente para segurança
-cloudinary.config({ 
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-  api_key: process.env.CLOUDINARY_API_KEY, 
-  api_secret: process.env.CLOUDINARY_API_SECRET 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// --- CONFIGURAÇÃO DO MULTER (MEMORY STORAGE) ---
-// No Render, salvar em pastas locais pode falhar. Usamos o buffer da memória.
+// --- CONFIGURAÇÃO DO MULTER ---
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -40,7 +38,7 @@ const ADMIN_USER = {
   role: "admin"
 };
 
-// --- FUNÇÃO AUXILIAR CLOUDINARY (STREAM UPLOAD) ---
+// --- FUNÇÃO AUXILIAR CLOUDINARY ---
 const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -54,13 +52,13 @@ const uploadToCloudinary = (fileBuffer) => {
   });
 };
 
-// --- MIDDLEWARES DE PROTEÇÃO ---
+// --- MIDDLEWARE DE PROTEÇÃO ---
 function verificarAdmin(req, res, next) {
   const authHeader = req.headers["authorization"];
   if (!authHeader) return res.status(401).json({ erro: "Acesso restrito." });
 
   try {
-    const token = authHeader.split(" ")[1]; 
+    const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "segredo_fallback");
     req.user = decoded;
     next();
@@ -70,22 +68,19 @@ function verificarAdmin(req, res, next) {
 }
 
 // --- ROTAS DA API ---
-
-// Login
 app.post("/api/login", (req, res) => {
   const { usuario, senha } = req.body;
   if (usuario === ADMIN_USER.usuario && senha === ADMIN_USER.senha) {
     const token = jwt.sign(
       { usuario: ADMIN_USER.usuario, role: "admin" },
       process.env.JWT_SECRET || "segredo_fallback",
-      { expiresIn: "8h" } 
+      { expiresIn: "8h" }
     );
     return res.json({ token });
   }
   res.status(401).json({ erro: "Credenciais inválidas" });
 });
 
-// Listar
 app.get('/api/produtos', async (req, res) => {
   try {
     const produtos = await Produto.find().sort({ dataCriacao: -1 });
@@ -95,12 +90,11 @@ app.get('/api/produtos', async (req, res) => {
   }
 });
 
-//testar
+// rota de teste
 app.get("/api/ping", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Criar (POST)
 app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, res) => {
   try {
     const { nome, descricao, preco, estoque } = req.body;
@@ -119,7 +113,6 @@ app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, r
   }
 });
 
-// Editar (PUT)
 app.put('/api/produtos/:id', verificarAdmin, upload.single('imagem'), async (req, res) => {
   try {
     const updates = { ...req.body };
@@ -135,7 +128,6 @@ app.put('/api/produtos/:id', verificarAdmin, upload.single('imagem'), async (req
   }
 });
 
-// Excluir
 app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
   try {
     await Produto.findByIdAndDelete(req.params.id);
@@ -143,6 +135,13 @@ app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
   } catch (err) {
     res.status(500).json({ erro: "Erro ao excluir" });
   }
+});
+
+// --- SERVIR FRONTEND ---
+app.use(express.static(path.join(__dirname, "frontend")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
 
 // --- INICIALIZAÇÃO ---
