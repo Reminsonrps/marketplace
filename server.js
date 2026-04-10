@@ -33,8 +33,8 @@ const upload = multer({ storage });
 
 // --- SEGURANÇA ---
 const ADMIN_USER = {
-  usuario: process.env.ADMIN_USER || "admin",
-  senha: process.env.ADMIN_PASS || "senha123",
+  usuario: process.env.ADMIN_USER || "cleane",
+  senha: process.env.ADMIN_PASS || "brasileira",
   role: "admin"
 };
 
