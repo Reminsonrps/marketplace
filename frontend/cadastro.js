@@ -80,19 +80,28 @@ async function editarProduto(id) {
   const estoque = prompt("Novo estoque:");
 
   const formData = new FormData();
-  formData.append("nome", nome);
-  formData.append("descricao", descricao);
-  formData.append("preco", preco);
-  formData.append("estoque", estoque);
+  if (nome) formData.append("nome", nome);
+  if (descricao) formData.append("descricao", descricao);
+  if (preco) formData.append("preco", preco);
+  if (estoque) formData.append("estoque", estoque);
 
   try {
     const response = await fetch(`${API_URL}/api/produtos/${id}`, {
       method: "PUT",
-      headers: { "Authorization": `Bearer ${token}` },
+      headers: {
+        "Authorization": `Bearer ${token}`
+        // NÃO definir Content-Type manualmente quando usar FormData
+      },
       body: formData
     });
-    if (!response.ok) throw new Error("Erro ao editar produto");
-    alert("Produto atualizado!");
+
+    if (!response.ok) {
+      const erro = await response.json();
+      throw new Error(erro.erro || "Erro ao editar produto");
+    }
+
+    const editado = await response.json();
+    alert("Produto atualizado com sucesso!");
     buscarProdutosDaAPI();
   } catch (err) {
     alert("Erro ao editar: " + err.message);
