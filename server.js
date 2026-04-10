@@ -108,9 +108,10 @@ app.post('/api/produtos', verificarAdmin, upload.single('imagem'), async (req, r
     const novo = new Produto({ nome, descricao, preco: Number(preco), estoque: Number(estoque), imagemUrl });
     await novo.save();
     res.status(201).json(novo);
-  } catch (err) {
-    res.status(500).json({ erro: "Erro ao salvar" });
-  }
+} catch (err) {
+  console.error("Erro ao salvar produto:", err); // log no servidor
+  res.status(500).json({ erro: err.message || "Erro ao salvar" });
+}
 });
 
 app.put('/api/produtos/:id', verificarAdmin, upload.single('imagem'), async (req, res) => {
@@ -132,9 +133,10 @@ app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
   try {
     await Produto.findByIdAndDelete(req.params.id);
     res.json({ mensagem: "Removido!" });
-  } catch (err) {
-    res.status(500).json({ erro: "Erro ao excluir" });
-  }
+} catch (err) {
+  console.error("Erro ao editar produto:", err);
+  res.status(500).json({ erro: err.message || "Erro ao editar" });
+}
 });
 
 // --- SERVIR FRONTEND ---
