@@ -114,6 +114,67 @@ async function removerProduto(id) {
   }
 }
 
+// 5A. RENDERIZAR CARDS (catálogo)
+function renderizarCards(listaProdutos) {
+  if (!container) return;
+  container.innerHTML = '';
+  
+  if (listaProdutos.length === 0) {
+    container.innerHTML = `<p style="text-align: center; grid-column: 1/-1; color: #999;">Nenhuma película encontrada. 🌸</p>`;
+    return;
+  }
+
+  listaProdutos.forEach(item => {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    const temEstoque = item.estoque > 0;
+
+    card.innerHTML = `
+        <img src="${item.imagemUrl || item.imagem || ''}" alt="${item.nome}">
+        <div class="card-info">
+            <h3>${item.nome}</h3>
+            <p>${item.descricao}</p>
+            <span class="status-estoque" style="color: ${temEstoque ? '#28a745' : '#dc3545'};">
+                ${temEstoque ? item.estoque + ' em estoque' : 'Esgotado'}
+            </span>
+            <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
+        </div>
+        <button onclick="adicionarAoCarrinho('${item._id}')"
+            ${!temEstoque ? 'disabled class="btn-indisponivel"' : ''}>
+            ${temEstoque ? '🛒 Adicionar' : 'Indisponível'}
+        </button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// 5B. RENDERIZAR TABELA (configuração)
+function renderizarTabela(listaProdutos) {
+  if (!corpoTabela) return;
+  corpoTabela.innerHTML = '';
+
+  if (!listaProdutos || listaProdutos.length === 0) {
+    corpoTabela.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#999;">Nenhum produto encontrado.</td></tr>`;
+    return;
+  }
+
+  listaProdutos.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item._id}</td>
+      <td>${item.nome}</td>
+      <td>${item.descricao}</td>
+      <td>R$ ${(Number(item.preco) || 0).toFixed(2)}</td>
+      <td><img src="${item.imagemUrl || item.imagem || ''}" alt="${item.nome}" style="max-width:60px;"></td>
+      <td>
+        <button class="btn-acao" onclick="editarProduto('${item._id}')">✏️</button>
+        <button class="btn-acao" onclick="removerProduto('${item._id}')">🗑️</button>
+      </td>
+    `;
+    corpoTabela.appendChild(tr);
+  });
+}
+
 // --- INICIALIZAÇÃO ---
 document.getElementById("btnLogin")?.addEventListener("click", loginAdmin);
 document.getElementById("btnLogout")?.addEventListener("click", () => {
