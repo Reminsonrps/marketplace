@@ -57,7 +57,7 @@ async function buscarProdutosDaAPI() {
   }
 }
 
-// 4. CRUD DE PRODUTOS (cadastro.html)
+// 4. CRUD DE PRODUTOS
 async function criarProduto(formData) {
   try {
     const response = await fetch(`${API_URL}/api/produtos`, {
@@ -65,8 +65,14 @@ async function criarProduto(formData) {
       headers: { "Authorization": `Bearer ${token}` },
       body: formData
     });
-    if (!response.ok) throw new Error("Erro ao criar produto");
-    alert("Produto criado com sucesso!");
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.erro || "Erro ao cadastrar produto");
+    }
+
+    alert("Produto cadastrado com sucesso!");
     buscarProdutosDaAPI();
   } catch (err) {
     alert("Erro ao salvar produto: " + err.message);
@@ -74,38 +80,44 @@ async function criarProduto(formData) {
 }
 
 async function editarProduto(id) {
-  const nome = prompt("Novo nome:");
-  const descricao = prompt("Nova descrição:");
-  const preco = prompt("Novo preço:");
-  const estoque = prompt("Novo estoque:");
+  const produto = todosOsProdutos.find(p => p._id === id);
+  if (!produto) return alert("Produto não encontrado");
 
-  const formData = new FormData();
-  if (nome) formData.append("nome", nome);
-  if (descricao) formData.append("descricao", descricao);
-  if (preco) formData.append("preco", preco);
-  if (estoque) formData.append("estoque", estoque);
+  // Preenche o formulário com os dados atuais
+  document.getElementById("nome").value = produto.nome;
+  document.getElementById("descricao").value = produto.descricao;
+  document.getElementById("preco").value = produto.preco;
+  document.getElementById("estoque").value = produto.estoque;
 
-  try {
-    const response = await fetch(`${API_URL}/api/produtos/${id}`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`
-        // NÃO definir Content-Type manualmente quando usar FormData
-      },
-      body: formData
-    });
+  const btn = document.querySelector("#cadastrar input[type=submit]");
+  btn.value = "Salvar Alterações";
 
-    if (!response.ok) {
-      const erro = await response.json();
-      throw new Error(erro.erro || "Erro ao editar produto");
+  const form = document.getElementById("cadastrar");
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch(`${API_URL}/api/produtos/${id}`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.erro || "Erro ao editar produto");
+      }
+
+      alert("Produto atualizado com sucesso!");
+      form.reset();
+      btn.value = "Cadastrar Produto"; // volta ao modo cadastro
+      buscarProdutosDaAPI();
+    } catch (err) {
+      alert("Erro ao editar: " + err.message);
     }
-
-    const editado = await response.json();
-    alert("Produto atualizado com sucesso!");
-    buscarProdutosDaAPI();
-  } catch (err) {
-    alert("Erro ao editar: " + err.message);
-  }
+  };
 }
 
 async function removerProduto(id) {
@@ -115,7 +127,12 @@ async function removerProduto(id) {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error("Erro ao excluir produto");
+
+    if (!response.ok) {
+      const erro = await response.json();
+      throw new Error(erro.erro || "Erro ao excluir produto");
+    }
+
     alert("Produto removido!");
     buscarProdutosDaAPI();
   } catch (err) {
@@ -189,6 +206,15 @@ document.getElementById("btnLogin")?.addEventListener("click", loginAdmin);
 document.getElementById("btnLogout")?.addEventListener("click", () => {
   localStorage.removeItem("token");
   location.reload();
+});
+
+// Captura envio do formulário de cadastro
+document.getElementById("cadastrar")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+  await criarProduto(formData);
+  form.reset();
 });
 
 buscarProdutosDaAPI();
