@@ -24,6 +24,9 @@ console.log("Cloudinary conectado:", {
   api_secret: process.env.CLOUDINARY_API_SECRET ? "OK" : "Faltando"
 });
 
+console.log("Timestamp atual:", Math.floor(Date.now() / 1000));
+console.log("Data atual:", new Date().toISOString());
+
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
