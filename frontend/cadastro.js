@@ -9,15 +9,13 @@ const totalSpan = document.getElementById('total');
 
 let carrinho = [];
 let todosOsProdutos = []; 
-
-// --- GESTÃO DE TOKEN ---
 let token = localStorage.getItem("token") || null;
+let editandoId = null; // controla se estamos editando ou cadastrando
 
 // 2. LOGIN ADMIN
 async function loginAdmin() {
   const usuario = prompt("Usuário:");
   const senha = prompt("Senha:");
-
   if (!usuario || !senha) return;
 
   try {
@@ -27,14 +25,14 @@ async function loginAdmin() {
       body: JSON.stringify({ usuario, senha })
     });
 
-    if (!response.ok) throw new Error("Credenciais inválidas");
-
     const data = await response.json();
+    if (!response.ok) throw new Error(data.erro || "Credenciais inválidas");
+
     localStorage.setItem("token", data.token);
     alert("Bem-vinda, Cleane!");
     window.location.href = "cadastro.html"; 
   } catch (err) {
-    alert("Erro ao acessar o painel.");
+    alert("Erro ao acessar o painel: " + err.message);
   }
 }
 
@@ -42,82 +40,53 @@ async function loginAdmin() {
 async function buscarProdutosDaAPI() {
   try {
     const response = await fetch(`${API_URL}/api/produtos`);
-    if (!response.ok) throw new Error("Erro ao buscar dados");
-    
-    todosOsProdutos = await response.json();
-    console.log("Produtos recebidos:", todosOsProdutos);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.erro || "Erro ao buscar dados");
 
-    if (container) {
-      renderizarCards(todosOsProdutos);
-    } else if (corpoTabela) {
-      renderizarTabela(todosOsProdutos);
-    }
+    todosOsProdutos = data;
+    if (container) renderizarCards(todosOsProdutos);
+    else if (corpoTabela) renderizarTabela(todosOsProdutos);
   } catch (error) {
     console.error("Erro ao carregar catálogo:", error);
   }
 }
 
 // 4. CRUD DE PRODUTOS
-async function criarProduto(formData) {
+async function salvarProduto(formData) {
   try {
-    const response = await fetch(`${API_URL}/api/produtos`, {
-      method: "POST",
+    const url = editandoId ? `${API_URL}/api/produtos/${editandoId}` : `${API_URL}/api/produtos`;
+    const method = editandoId ? "PUT" : "POST";
+
+    const response = await fetch(url, {
+      method,
       headers: { "Authorization": `Bearer ${token}` },
       body: formData
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.erro || `Erro HTTP ${response.status}`);
 
-    if (!response.ok) {
-      throw new Error(data.erro || "Erro ao cadastrar produto");
-    }
-
-    alert("Produto cadastrado com sucesso!");
+    alert(editandoId ? "Produto atualizado com sucesso!" : "Produto cadastrado com sucesso!");
+    document.getElementById("cadastrar").reset();
+    document.querySelector("#cadastrar input[type=submit]").value = "Cadastrar Produto";
+    editandoId = null;
     buscarProdutosDaAPI();
   } catch (err) {
     alert("Erro ao salvar produto: " + err.message);
   }
 }
 
-async function editarProduto(id) {
+function editarProduto(id) {
   const produto = todosOsProdutos.find(p => p._id === id);
   if (!produto) return alert("Produto não encontrado");
 
-  // Preenche o formulário com os dados atuais
   document.getElementById("nome").value = produto.nome;
   document.getElementById("descricao").value = produto.descricao;
   document.getElementById("preco").value = produto.preco;
   document.getElementById("estoque").value = produto.estoque;
 
-  const btn = document.querySelector("#cadastrar input[type=submit]");
-  btn.value = "Salvar Alterações";
-
-  const form = document.getElementById("cadastrar");
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
-
-    try {
-      const response = await fetch(`${API_URL}/api/produtos/${id}`, {
-        method: "PUT",
-        headers: { "Authorization": `Bearer ${token}` },
-        body: formData
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.erro || "Erro ao editar produto");
-      }
-
-      alert("Produto atualizado com sucesso!");
-      form.reset();
-      btn.value = "Cadastrar Produto"; // volta ao modo cadastro
-      buscarProdutosDaAPI();
-    } catch (err) {
-      alert("Erro ao editar: " + err.message);
-    }
-  };
+  document.querySelector("#cadastrar input[type=submit]").value = "Salvar Alterações";
+  editandoId = id;
 }
 
 async function removerProduto(id) {
@@ -128,10 +97,8 @@ async function removerProduto(id) {
       headers: { "Authorization": `Bearer ${token}` }
     });
 
-    if (!response.ok) {
-      const erro = await response.json();
-      throw new Error(erro.erro || "Erro ao excluir produto");
-    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.erro || `Erro HTTP ${response.status}`);
 
     alert("Produto removido!");
     buscarProdutosDaAPI();
@@ -144,7 +111,6 @@ async function removerProduto(id) {
 function renderizarCards(listaProdutos) {
   if (!container) return;
   container.innerHTML = '';
-  
   if (listaProdutos.length === 0) {
     container.innerHTML = `<p style="text-align: center; grid-column: 1/-1; color: #999;">Nenhuma película encontrada. 🌸</p>`;
     return;
@@ -165,10 +131,6 @@ function renderizarCards(listaProdutos) {
             </span>
             <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
         </div>
-        <button onclick="adicionarAoCarrinho('${item._id}')"
-            ${!temEstoque ? 'disabled class="btn-indisponivel"' : ''}>
-            ${temEstoque ? '🛒 Adicionar' : 'Indisponível'}
-        </button>
     `;
     container.appendChild(card);
   });
@@ -178,7 +140,6 @@ function renderizarCards(listaProdutos) {
 function renderizarTabela(listaProdutos) {
   if (!corpoTabela) return;
   corpoTabela.innerHTML = '';
-
   if (!listaProdutos || listaProdutos.length === 0) {
     corpoTabela.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#999;">Nenhum produto encontrado.</td></tr>`;
     return;
@@ -208,13 +169,12 @@ document.getElementById("btnLogout")?.addEventListener("click", () => {
   location.reload();
 });
 
-// Captura envio do formulário de cadastro
+// Captura envio do formulário
 document.getElementById("cadastrar")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = e.target;
   const formData = new FormData(form);
-  await criarProduto(formData);
-  form.reset();
+  await salvarProduto(formData);
 });
 
 buscarProdutosDaAPI();
