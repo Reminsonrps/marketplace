@@ -160,7 +160,7 @@ app.delete('/api/produtos/:id', verificarAdmin, async (req, res) => {
 app.use(express.static(path.join(__dirname, "frontend")));
 
 // Rota catch-all para SPA (React/Vue/etc)
-app.get("/*", (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
 
