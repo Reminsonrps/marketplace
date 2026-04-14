@@ -12,7 +12,6 @@ import jwt from "jsonwebtoken";
 dotenv.config();
 
 // --- CONFIGURAÇÃO DO CLOUDINARY ---
-// O .trim() remove espaços acidentais que causam o erro "Invalid Signature"
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME?.trim(),
   api_key: process.env.CLOUDINARY_API_KEY?.trim(),
@@ -22,6 +21,8 @@ cloudinary.config({
 // Logs de verificação (ajudam a debugar no terminal)
 console.log("--- Verificação de Configuração ---");
 console.log("Cloudinary Cloud Name:", cloudinary.config().cloud_name || "NÃO CONFIGURADO");
+console.log("Cloudinary API Key:", cloudinary.config().api_key ? "OK" : "Faltando");
+console.log("Cloudinary API Secret:", cloudinary.config().api_secret ? "OK" : "Faltando");
 console.log("MongoDB URI:", process.env.MONGO_URI ? "OK" : "Faltando");
 console.log("-----------------------------------");
 
@@ -50,8 +51,8 @@ const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: 'cleanesite_produtos',
-        // O SDK gera o timestamp e a assinatura automaticamente aqui
+        folder: 'cleanesite_produtos'
+        // O SDK gera timestamp e assinatura automaticamente
       },
       (error, result) => {
         if (result) resolve(result);
