@@ -26,12 +26,19 @@ async function loginAdmin() {
     });
 
     const data = await response.json();
+    console.log("Resposta do backend:", data); // <-- ADICIONE ISSO
+
     if (!response.ok) throw new Error(data.erro || "Credenciais inválidas");
+
+    if (!data.token) {
+      throw new Error("Token não recebido do servidor");
+    }
 
     localStorage.setItem("token", data.token);
     alert("Bem-vinda, Cleane!");
-    window.location.href = "cadastro.html"; 
+    window.location.href = "cadastro.html";
   } catch (err) {
+    console.error("Erro no login:", err);
     alert("Erro ao acessar o painel: " + err.message);
   }
 }
